@@ -1,3 +1,5 @@
+include(ExternalProject)
+
 macro(set_cache_variable VAR_NAME VAR_DESCRIPTION)
     set(${VAR_NAME} ${${VAR_NAME}} CACHE INTERNAL ${VAR_DESCRIPTION})
     message(STATUS "Set ${VAR_NAME} to ${${VAR_NAME}}.")
@@ -43,21 +45,23 @@ if(USE_SYSTEM_CURL)
 endif()
 if(NOT USE_SYSTEM_CURL OR NOT CURL_FOUND)
     message(STATUS "Not using system Curl, using built-in curl project instead.")
+
+    ExternalProject_Add(curl_ep
+      URL https://curl.haxx.se/download/curl-7.56.1.tar.gz
+      PREFIX "${CMAKE_CURRENT_LIST_DIR}/curl"
+      DOWNLOAD_DIR "${CMAKE_CURRENT_LIST_DIR}/curl"
+      CONFIGURE_COMMAND "${CMAKE_CURRENT_LIST_DIR}/curl/src/curl_ep/configure" "--without-zlib" "--disable-ldap"
+      BUILD_IN_SOURCE 1
+    )
+
     option(BUILD_TESTING "Set to ON to build cURL tests." OFF)
     option(BUILD_CURL_EXE "Set to ON to build cURL executable." OFF)
-    add_subdirectory(curl)
+
     set(CURL_FOUND TRUE)
-    set(CURL_LIBRARIES libcurl)
+    set(CURL_LIBRARIES "${CMAKE_CURRENT_LIST_DIR}/curl/src/curl_ep/lib/.libs/libcurl.a")
     set(CURL_INCLUDE_DIRS
-        ${CURL_SOURCE_DIR}/include
-        ${CURL_BINARY_DIR}/include/curl)
-        
-    # Group under the "external" project folder in IDEs such as Visual Studio.
-    if(BUILD_CURL_EXE)
-        set_property(TARGET curl PROPERTY FOLDER "external")
-    endif()
-        
-    set_property(TARGET libcurl PROPERTY FOLDER "external")
+        ${CMAKE_CURRENT_LIST_DIR}/curl/src/curl_ep/include
+        ${CMAKE_CURRENT_LIST_DIR}/curl/src/curl_ep/include/curl)
 endif()
 
 set_cache_variable(CURL_FOUND "Set if libcurl is found or built")
@@ -85,7 +89,7 @@ if(BUILD_CPR_TESTS)
         set(GTEST_MAIN_LIBRARIES gtest_main)
         set(GTEST_BOTH_LIBRARIES gtest gtest_main)
         set(GTEST_INCLUDE_DIRS ${gtest_SOURCE_DIR}/include)
-        
+
         # Group under the "tests/gtest" project folder in IDEs such as Visual Studio.
     set_property(TARGET gtest PROPERTY FOLDER "tests/gtest")
     set_property(TARGET gtest_main PROPERTY FOLDER "tests/gtest")
@@ -111,7 +115,7 @@ if(BUILD_CPR_TESTS)
     set_cache_variable(MONGOOSE_FOUND "Set if libmongoose was found or built")
     set_cache_variable(MONGOOSE_LIBRARIES "Location of libmongoose")
     set_cache_variable(MONGOOSE_INCLUDE_DIRS "Location of mongoose include files")
-    
+
     # Group under the "external" project folder in IDEs such as Visual Studio.
     set_property(TARGET mongoose PROPERTY FOLDER "external")
 endif()

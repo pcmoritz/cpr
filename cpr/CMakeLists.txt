@@ -42,6 +42,7 @@ add_library(${CPR_LIBRARIES}
 message(STATUS "Using CURL_LIBRARIES: ${CURL_LIBRARIES}.")
 target_link_libraries(${CPR_LIBRARIES}
     ${CURL_LIBRARIES})
+add_dependencies(${CPR_LIBRARIES} curl_ep)
 
 if(NOT (CMAKE_VERSION VERSION_LESS 3.0))
     target_include_directories(${CPR_LIBRARIES}
